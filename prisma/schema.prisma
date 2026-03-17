@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  AGENT
+}
+
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  thumbnail   String?   // URL for the course image
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  authorId    Int
+  author      User     @relation(fields: [authorId], references: [id])
+  lessons     Lesson[]
+}
+
+model Lesson {
+  id        Int     @id @default(autoincrement())
+  title     String
+  videoUrl  String  // Link to the video content
+  order     Int     // To keep lessons in 1, 2, 3 sequence
+  
+  // Relations
+  courseId  Int
+  course    Course  @relation(fields: [courseId], references: [id])
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
+  password String
+  role     Role
+  courses  Course[] // Add this line!
+}
