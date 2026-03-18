@@ -49,6 +49,10 @@ model Lesson {
   // Relations
   courseId  Int
   course    Course  @relation(fields: [courseId], references: [id])
+
+  passingScore Int        @default(70) 
+  questions    Question[]
+  lessonProgress LessonProgress[]
 }
 
 model User {
@@ -58,4 +62,35 @@ model User {
   role     Role
   courses  Course[]
   assignments Assignment[]
+  lessonProgress LessonProgress[]
+}
+
+model Question {
+  id        Int      @id @default(autoincrement())
+  text      String
+  lessonId  Int
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  choices   Choice[]
+}
+
+model Choice {
+  id         Int      @id @default(autoincrement())
+  text       String
+  isCorrect  Boolean  @default(false)
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+}
+
+model LessonProgress {
+  id        Int      @id @default(autoincrement())
+  completed Boolean  @default(false)
+  score     Int?     
+  
+  // Relations
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  lessonId  Int
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
 }

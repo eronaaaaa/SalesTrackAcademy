@@ -5,9 +5,15 @@ const {
   getAllCourses,
 } = require("../controllers/courseController");
 
-const { addLesson } = require("../controllers/lessonController");
+const { isLessonUnlocked } = require("../middleware/lessonLock");
+
+const {
+  addLesson,
+  getLessonContent,
+} = require("../controllers/lessonController");
 
 const { protect, authorize } = require("../middleware/authMiddleware");
+router.get("/lesson/:lessonId", protect, isLessonUnlocked, getLessonContent);
 
 router.get("/", protect, getAllCourses);
 

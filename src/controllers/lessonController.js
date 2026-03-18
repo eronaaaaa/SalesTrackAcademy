@@ -28,3 +28,32 @@ exports.addLesson = async (req, res) => {
       .json({ error: "Failed to add lesson", details: error.message });
   }
 };
+
+exports.getLessonContent = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+
+    const lesson = await prisma.lesson.findUnique({
+      where: { id: parseInt(lessonId) },
+      include: {
+        questions: {
+          include: {
+            choices: {
+              select: { id: true, text: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!lesson) {
+      return res.status(404).json({ error: "Lesson not found" });
+    }
+
+    res.status(200).json(lesson);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Failed to load lesson content", details: error.message });
+  }
+};

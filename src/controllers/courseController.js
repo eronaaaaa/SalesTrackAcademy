@@ -38,3 +38,34 @@ exports.getAllCourses = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch courses" });
   }
 };
+
+exports.checkCourseCompletion = async (userId, courseId) => {
+  try {
+    const totalLessons = await prisma.lesson.count({
+      where: { courseId: parseInt(courseId) },
+    });
+
+    const completedLessons = await prisma.lessonProgress.count({
+      where: {
+        userId: userId,
+        lesson: { courseId: parseInt(courseId) },
+        completed: true,
+      },
+    });
+
+    if (totalLessons > 0 && totalLessons === completedLessons) {
+      await prisma.assignment.update({
+        where: {
+          userId_courseId: { userId, courseId: parseInt(courseId) },
+        },
+        data: { status: "COMPLETED" },
+      });
+      console.log(`User ${userId} has graduated from Course ${courseId}!`);
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Error checking course completion:", error.message);
+  }
+};
