@@ -76,7 +76,7 @@ exports.submitQuiz = async (req, res) => {
         create: {
           userId: userId,
           lessonId: parseInt(lessonId),
-          completed: true,
+          // completed: true,
         },
       });
 
@@ -87,7 +87,7 @@ exports.submitQuiz = async (req, res) => {
         score: finalScore,
         correctCount,
         totalQuestions,
-        courseCompleted: isGraduated || false,
+        courseCompleted: isGraduated || passed || false,
       });
     } else {
       return res.status(200).json({

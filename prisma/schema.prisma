@@ -11,6 +11,12 @@ enum Role {
   AGENT
 }
 
+enum ContentType {
+  VIDEO
+  AUDIO
+  PDF
+}
+
 model Assignment {
   id          Int      @id @default(autoincrement())
   assignedAt  DateTime @default(now())
@@ -43,7 +49,8 @@ model Course {
 model Lesson {
   id        Int     @id @default(autoincrement())
   title     String
-  videoUrl  String 
+  contentUrl   String           @default("")
+  contentType  ContentType      @default(VIDEO)
   order     Int 
   
   // Relations

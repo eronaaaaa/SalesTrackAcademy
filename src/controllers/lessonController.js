@@ -8,13 +8,14 @@ const prisma = new PrismaClient({ adapter });
 
 exports.addLesson = async (req, res) => {
   try {
-    const { title, videoUrl, order } = req.body;
+    const { title, contentUrl, contentType, order } = req.body;
     const { courseId } = req.params;
 
     const lesson = await prisma.lesson.create({
       data: {
         title,
-        videoUrl,
+        contentUrl,
+        contentType: contentType || "VIDEO",
         order: parseInt(order),
         courseId: parseInt(courseId),
       },

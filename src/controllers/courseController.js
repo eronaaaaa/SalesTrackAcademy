@@ -69,3 +69,52 @@ exports.checkCourseCompletion = async (userId, courseId) => {
     console.error("Error checking course completion:", error.message);
   }
 };
+
+exports.getCourseById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const course = await prisma.course.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        lessons: {
+          include: {
+            questions: {
+              include: { choices: true },
+            },
+            lessonProgress: {
+              where: { userId: req.user.id },
+            },
+          },
+        },
+        assignments: {
+          where: { userId: req.user.id },
+        },
+      },
+    });
+
+    const totalLessons = course.lessons.length;
+    const completedCount = course.lessons.filter(
+      (lesson) => lesson.lessonProgress?.[0]?.completed === true,
+    ).length;
+    const progressPercentage =
+      totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    res.json({
+      ...course,
+      progress: {
+        percentage: progressPercentage,
+        completedCount,
+        totalCount: totalLessons,
+        isFullyCompleted: progressPercentage === 100,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error fetching course details" });
+  }
+};
