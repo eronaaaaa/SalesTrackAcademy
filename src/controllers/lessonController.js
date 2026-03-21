@@ -30,6 +30,37 @@ exports.addLesson = async (req, res) => {
   }
 };
 
+exports.editLesson = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+    const { title, contentUrl, contentType, order, passingScore } = req.body;
+
+    const updatedLesson = await prisma.lesson.update({
+      where: { id: parseInt(lessonId) },
+      data: {
+        title: title || undefined,
+        contentUrl: contentUrl || undefined,
+        contentType: contentType || undefined,
+        order: order !== undefined ? parseInt(order) : undefined,
+        passingScore:
+          passingScore !== undefined ? parseInt(passingScore) : undefined,
+      },
+    });
+
+    res
+      .status(200)
+      .json({ message: "Lesson updated successfully", lesson: updatedLesson });
+  } catch (error) {
+    console.error(error);
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Lesson not found" });
+    }
+    res
+      .status(500)
+      .json({ error: "Failed to update lesson", details: error.message });
+  }
+};
+
 exports.getLessonContent = async (req, res) => {
   try {
     const { lessonId } = req.params;

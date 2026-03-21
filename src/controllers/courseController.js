@@ -26,11 +26,43 @@ exports.createCourse = async (req, res) => {
   }
 };
 
+exports.editCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { title, description, thumbnail } = req.body;
+
+    const course = await prisma.course.update({
+      where: { 
+        id: parseInt(courseId) 
+      },
+      data: {
+        title: title || undefined,
+        description: description || undefined,
+        thumbnail: thumbnail || undefined,
+      },
+    });
+
+    res.status(200).json({ message: "Course updated successfully", course });
+  } catch (error) {
+    console.error(error);
+    
+    if (error.code === 'P2025') { //this is from prisma 
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    res.status(500).json({ 
+      error: "Failed to update course", 
+      details: error.message 
+    });
+  }
+};
+
 exports.getAllCourses = async (req, res) => {
   try {
     const courses = await prisma.course.findMany({
       include: {
         lessons: true,
+        assignments: true,
       },
     });
     res.status(200).json(courses);

@@ -1,4 +1,4 @@
-import { AgentsReport, Course } from "@/types/course";
+import { AgentsReport, Choice, Course, GlobalDashboard } from "@/types/course";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -15,6 +15,14 @@ export const api = {
 
   getAgentProgressReport: async (): Promise<AgentsReport[]> => {
     const res = await fetch(`${API_BASE_URL}/assignments/reports/agents`, {
+      headers: api.getHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to fetch courses");
+    return res.json();
+  },
+
+  getGlobalDashboard: async (): Promise<GlobalDashboard> => {
+    const res = await fetch(`${API_BASE_URL}/assignments/reports/global`, {
       headers: api.getHeaders(),
     });
     if (!res.ok) throw new Error("Failed to fetch courses");
@@ -62,18 +70,64 @@ export const api = {
      return res.json();
   },
 
+  updateCourse: async (
+    courseId: number,
+    title: string,
+    description: string,
+    thumbnail: string,
+  ) => {
+    const res = await fetch(`${API_BASE_URL}/courses/${courseId}`, {
+      method: "PUT",
+      headers: api.getHeaders(),
+      body: JSON.stringify({ title, description, thumbnail }),
+    });
+     return res.json();
+  },
+
   addLesson: async (
     courseId: number,
     title: string,
     contentUrl: string,
     contentType: string,
     order: number,
+    passingScore: number,
 
   ) => {
     const res = await fetch(`${API_BASE_URL}/courses/${courseId}/lessons`, {
       method: "POST",
       headers: api.getHeaders(),
-      body: JSON.stringify({ title, contentUrl, contentType, order }),
+      body: JSON.stringify({ title, contentUrl, contentType, order, passingScore }),
+    });
+     return res.json();
+  },
+
+   updateLesson: async (
+    lessonId: number,
+    title: string,
+    contentUrl: string,
+    contentType: string,
+    order: number,
+    passingScore: number,
+
+  ) => {
+    const res = await fetch(`${API_BASE_URL}/courses/lesson/${lessonId}`, {
+      method: "PUT",
+      headers: api.getHeaders(),
+      body: JSON.stringify({ title, contentUrl, contentType, order, passingScore }),
+    });
+     return res.json();
+  },
+
+  createQuestion: async (
+    lessonId: number,
+    text: string,
+    choices: Choice[],
+
+  ) => {
+    const res = await fetch(`${API_BASE_URL}/quizzes/lesson/${lessonId}/questions`, {
+      method: "POST",
+      headers: api.getHeaders(),
+      body: JSON.stringify({ text, choices}),
     });
      return res.json();
   },

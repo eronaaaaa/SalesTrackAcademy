@@ -4,6 +4,7 @@ const {
   createCourse,
   getAllCourses,
   getCourseById,
+  editCourse,
 } = require("../controllers/courseController");
 
 const { isLessonUnlocked } = require("../middleware/lessonLock");
@@ -11,16 +12,16 @@ const { isLessonUnlocked } = require("../middleware/lessonLock");
 const {
   addLesson,
   getLessonContent,
+  editLesson,
 } = require("../controllers/lessonController");
 
 const { protect, authorize } = require("../middleware/authMiddleware");
-router.post(
-  "/:courseId/lessons",
-  protect,
-  authorize("ADMIN"),
-  addLesson,
-);
+router.post("/:courseId/lessons", protect, authorize("ADMIN"), addLesson);
+
+router.put("/lesson/:lessonId", protect, editLesson);
 router.get("/lesson/:lessonId", protect, isLessonUnlocked, getLessonContent);
+
+router.put("/:courseId", protect, editCourse);
 
 router.get("/", protect, getAllCourses);
 

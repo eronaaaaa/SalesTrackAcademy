@@ -1,6 +1,6 @@
 export type CourseStatus = 'IN_PROGRESS' | 'COMPLETED' | 'NOT_STARTED';
 
-type ContentType = 'VIDEO' | 'AUDIO' | 'PDF';
+export type ContentType = 'VIDEO' | 'AUDIO' | 'PDF';
 
 export interface Question {
   id: number;
@@ -11,11 +11,11 @@ export interface Question {
 }
 
 export interface Choice {
-  id: number;
+  id?: number;
   isCorrect: boolean;
-  questionId: number;
+  questionId?: number;
   text: string;
-  question: Question;
+  question?: Question;
 }
 
 export interface Lesson {
@@ -41,6 +41,23 @@ export interface LessonProgress {
   userId: number;
 }
 
+export interface Assignment {
+  id: number;
+  assignedAt: string;
+  status: string;
+  userId: number;
+  courseId: number;
+}
+
+export interface GlobalDashboard {
+  platformOverview: {
+    totalAgents: number;
+    totalCourses: number;
+    totalAssignments: number;
+    averageQuizScore: string;
+  }
+}
+
 export interface Course {
   id: number;
   title: string;
@@ -57,6 +74,7 @@ export interface Course {
     totalCount: number;
     isFullyCompleted: boolean;
   };
+  assignments: Assignment[];
 }
 
 export interface AgentsReport {
