@@ -10,28 +10,56 @@ const prisma = new PrismaClient({ adapter });
 
 exports.register = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
-
+    const { email, password, name, courseId } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        role: role.toUpperCase(),
+    // const user = await prisma.user.create({
+    //   data: {
+    //     email,
+    //     password: hashedPassword,
+    //     name,
+    //     role: role.toUpperCase(),
+    //   },
+    // });
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: { email, password: hashedPassword, name, role: "AGENT" },
+      });
+
+      if (courseId) {
+        await tx.assignment.create({
+          data: {
+            userId: newUser.id,
+            courseId: parseInt(courseId),
+            status: "IN_PROGRESS",
+          },
+        });
+      }
+
+      return newUser;
+    });
+
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" },
+    );
+
+    res.status(201).json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
       },
     });
-
-    res.status(201).json({ message: "User created", userId: user.id });
   } catch (error) {
-    console.log("catch", error);
-    res.status(500).json({
-      error: "Internal Server Error",
-      message: error.message,
-    });
+    res
+      .status(500)
+      .json({ error: "Registration failed", message: error.message });
   }
 };
-
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   const user = await prisma.user.findUnique({ where: { email } });
@@ -42,7 +70,16 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
     );
-    res.json({ token, role: user.role });
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      },
+    });
   } else {
     res.status(401).json({ error: "Invalid credentials" });
   }

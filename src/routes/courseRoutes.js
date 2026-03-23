@@ -16,6 +16,10 @@ const {
 } = require("../controllers/lessonController");
 
 const { protect, authorize } = require("../middleware/authMiddleware");
+const {
+  addComment,
+  getLessonComments,
+} = require("../controllers/commentController");
 router.post("/:courseId/lessons", protect, authorize("ADMIN"), addLesson);
 
 router.put("/lesson/:lessonId", protect, editLesson);
@@ -29,4 +33,6 @@ router.get("/:id", protect, getCourseById);
 
 router.post("/", protect, authorize("ADMIN"), createCourse);
 
+router.post("/lesson/:lessonId/comments", protect, addComment);
+router.get("/lesson/:lessonId/comments", protect, getLessonComments);
 module.exports = router;

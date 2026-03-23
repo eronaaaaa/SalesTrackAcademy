@@ -32,8 +32,8 @@ exports.editCourse = async (req, res) => {
     const { title, description, thumbnail } = req.body;
 
     const course = await prisma.course.update({
-      where: { 
-        id: parseInt(courseId) 
+      where: {
+        id: parseInt(courseId),
       },
       data: {
         title: title || undefined,
@@ -45,29 +45,72 @@ exports.editCourse = async (req, res) => {
     res.status(200).json({ message: "Course updated successfully", course });
   } catch (error) {
     console.error(error);
-    
-    if (error.code === 'P2025') { //this is from prisma 
+
+    if (error.code === "P2025") {
+      //this is from prisma
       return res.status(404).json({ error: "Course not found" });
     }
 
-    res.status(500).json({ 
-      error: "Failed to update course", 
-      details: error.message 
+    res.status(500).json({
+      error: "Failed to update course",
+      details: error.message,
     });
   }
 };
 
+// exports.getAllCourses = async (req, res) => {
+//   try {
+//     const courses = await prisma.course.findMany({
+//       include: {
+//         lessons: true,
+//         assignments: true,
+//       },
+//     });
+//     res.status(200).json(courses);
+//   } catch (error) {
+//     res.status(500).json({ error: "Failed to fetch courses" });
+//   }
+// };
+
 exports.getAllCourses = async (req, res) => {
   try {
-    const courses = await prisma.course.findMany({
-      include: {
-        lessons: true,
-        assignments: true,
-      },
-    });
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    let courses;
+
+    if (userRole === "ADMIN") {
+      courses = await prisma.course.findMany({
+        include: { lessons: true, assignments: true },
+      });
+    } else {
+      courses = await prisma.course.findMany({
+        where: {
+          assignments: {
+            some: {
+              userId: userId,
+            },
+          },
+        },
+        include: {
+          lessons: {
+            include: {
+              lessonProgress: {
+                where: { userId: userId },
+              },
+            },
+          },
+          assignments: {
+            where: { userId: userId },
+          },
+        },
+      });
+    }
+
     res.status(200).json(courses);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch courses" });
+    console.error("Fetch error:", error);
+    res.status(500).json({ error: "Failed to fetch assigned courses" });
   }
 };
 

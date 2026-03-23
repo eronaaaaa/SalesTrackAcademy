@@ -2,6 +2,12 @@ export type CourseStatus = 'IN_PROGRESS' | 'COMPLETED' | 'NOT_STARTED';
 
 export type ContentType = 'VIDEO' | 'AUDIO' | 'PDF';
 
+export enum Role {
+  agent = "AGENT",
+  admin = "ADMIN"
+
+}
+
 export interface Question {
   id: number;
   lessonId: number;
@@ -58,6 +64,25 @@ export interface GlobalDashboard {
   }
 }
 
+export interface Comment {
+  id: number;
+  text: string;
+  createdAt: string;
+  userId: number;
+  user: User;
+  lessonId: number;
+  lesson: Lesson;
+}
+
+export interface User {
+  id: number;
+  email: string;
+  role: Role;
+  name?: string;
+  courses: Course[];
+  assignments: Assignment[];
+  lessonProgres: LessonProgress[];
+}
 export interface Course {
   id: number;
   title: string;
