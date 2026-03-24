@@ -37,10 +37,10 @@ exports.createCourse = async (req, res) => {
 
 exports.editCourse = async (req, res) => {
   try {
-    const { courseId } = req.params;
+    const { id } = req.params;
     const { title, description, thumbnail } = req.body;
     const course = await prisma.course.update({
-      where: { id: parseInt(courseId) },
+      where: { id: parseInt(id) },
       data: {
         title: title || undefined,
         description: description || undefined,

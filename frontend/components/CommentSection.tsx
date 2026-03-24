@@ -14,7 +14,6 @@ export default function CommentSection({
     <div className="mt-12 space-y-6">
       <h3 className="text-xl font-black dark:text-white">Discussion</h3>
 
-      {/* Input Box */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
         <textarea
           className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none mb-4 min-h-[100px]"
@@ -30,7 +29,6 @@ export default function CommentSection({
         </button>
       </div>
 
-      {/* Comments List */}
       <div className="space-y-4">
         {comments.map((c) => (
           <div

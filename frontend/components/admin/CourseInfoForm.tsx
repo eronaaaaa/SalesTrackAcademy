@@ -7,7 +7,11 @@ interface CourseInfoFormProps {
   onSave: (title: string, description: string, thumbnail: string) => void;
 }
 
-export default function CourseInfoForm({ course, loading, onSave }: CourseInfoFormProps) {
+export default function CourseInfoForm({
+  course,
+  loading,
+  onSave,
+}: CourseInfoFormProps) {
   const [title, setTitle] = useState(course.title);
   const [description, setDescription] = useState(course.description ?? "");
   const [thumbnail, setThumbnail] = useState(course.thumbnail ?? "");
@@ -47,6 +51,25 @@ export default function CourseInfoForm({ course, loading, onSave }: CourseInfoFo
           />
         </div>
 
+        <div>
+          <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1 block">
+            Thumbnail URL
+          </label>
+          {thumbnail && (
+            <img
+              src={thumbnail}
+              alt="Thumbnail preview"
+              className="w-full h-32 object-cover rounded-2xl mb-2"
+              onError={(e) => (e.currentTarget.style.display = "none")}
+            />
+          )}
+          <input
+            className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
+            value={thumbnail}
+            onChange={(e) => setThumbnail(e.target.value)}
+            placeholder="https://example.com/image.jpg"
+          />
+        </div>
         <button
           onClick={() => onSave(title, description, thumbnail)}
           disabled={loading}

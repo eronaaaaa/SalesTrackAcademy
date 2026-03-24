@@ -24,6 +24,11 @@ exports.addLesson = async (req, res) => {
       },
     });
 
+    await prisma.assignment.updateMany({
+      where: { courseId: parseInt(courseId), status: "COMPLETED" },
+      data: { status: "IN_PROGRESS" },
+    });
+
     res.status(201).json({ message: "Lesson added", lesson });
   } catch (error) {
     console.error(error);

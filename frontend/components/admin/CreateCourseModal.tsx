@@ -9,14 +9,22 @@ interface CreateCourseModalProps {
 
 export default function CreateCourseModal({ onClose }: CreateCourseModalProps) {
   const router = useRouter();
-  const [formData, setFormData] = useState({ title: "", description: "", thumbnail: "" });
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    thumbnail: "",
+  });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await api.createCourse(formData.title, formData.description, formData.thumbnail);
+      const res = await api.createCourse(
+        formData.title,
+        formData.description,
+        formData.thumbnail,
+      );
       router.push(`/admin/courses/edit/${res.course.id}`);
     } catch (err) {
       console.error("Creation failed", err);
@@ -47,7 +55,9 @@ export default function CreateCourseModal({ onClose }: CreateCourseModalProps) {
               required
               className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none focus:ring-2 focus:ring-blue-600 dark:text-white"
               placeholder="e.g., Advanced Closing Techniques"
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
             />
           </div>
 
@@ -59,7 +69,30 @@ export default function CreateCourseModal({ onClose }: CreateCourseModalProps) {
               rows={4}
               className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none focus:ring-2 focus:ring-blue-600 dark:text-white"
               placeholder="Describe what the agents will learn..."
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold uppercase text-slate-400 mb-2 block">
+              Thumbnail URL
+            </label>
+            {formData.thumbnail && (
+              <img
+                src={formData.thumbnail}
+                alt="Thumbnail preview"
+                className="w-full h-32 object-cover rounded-2xl mb-2"
+                onError={(e) => (e.currentTarget.style.display = "none")}
+              />
+            )}
+            <input
+              className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none focus:ring-2 focus:ring-blue-600 dark:text-white"
+              placeholder="https://example.com/image.jpg"
+              onChange={(e) =>
+                setFormData({ ...formData, thumbnail: e.target.value })
+              }
             />
           </div>
 

@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { api } from "@/services/ApiService";
-import { Comment, Lesson } from "@/types/course";
-import Link from "next/link";
+import { Comment, Lesson, QuizResults } from "@/types/course";
 import QuizResultModal from "@/components/QuizResultsModal";
 import CommentSection from "@/components/CommentSection";
 import LessonContent from "@/components/LessonContent";
@@ -19,15 +18,23 @@ export default function LessonDetailPage() {
   const [nextLessonId, setNextLessonId] = useState<number | null>(null);
   const [prevLessonId, setPrevLessonId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Record<string, number>
+  >({});
   const [submitting, setSubmitting] = useState(false);
   const [showResult, setShowResult] = useState(false);
-  const [resultData, setResultData] = useState({ score: 0, passed: false, completed: false });
+  const [resultData, setResultData] = useState({
+    score: 0,
+    passed: false,
+    completed: false,
+  });
   const [comments, setComments] = useState<Comment[]>([]);
   const [isNextLocked, setIsNextLocked] = useState(true);
   const [commentText, setCommentText] = useState("");
 
-  // ---- Data fetching ----
+  useEffect(() => {
+    fetchComments();
+  }, [lessonId]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -36,22 +43,24 @@ export default function LessonDetailPage() {
         const data = await api.getCourseById(id as string);
         const lessons = data?.lessons || [];
         const currentIndex = lessons.findIndex(
-          (l: Lesson) => l.id === parseInt(lessonId as string)
+          (l: Lesson) => l.id === parseInt(lessonId as string),
         );
 
         if (currentIndex === -1) return;
 
-        let lessonData;
+        let lessonData: Lesson;
         try {
-          lessonData = await api.getLessonById(lessonId as string);
+          lessonData = await api.getLessonById(lessonId as string) as Lesson;
           setCurrentLesson(lessonData);
-        } catch (err: any) {
+        } catch (err) {
           router.push(`/courses/${id}?locked=true`);
           return;
         }
 
-        const alreadyPassed = lessonData.lessonProgress?.[0]?.completed || false;
-        const hasNoQuiz = !lessonData.questions || lessonData.questions.length === 0;
+        const alreadyPassed =
+          lessonData.lessonProgress?.[0]?.completed || false;
+        const hasNoQuiz =
+          !lessonData.questions || lessonData.questions.length === 0;
 
         setPrevLessonId(currentIndex > 0 ? lessons[currentIndex - 1].id : null);
 
@@ -73,13 +82,12 @@ export default function LessonDetailPage() {
 
   const fetchComments = async () => {
     try {
-      const data = await api.getCommentsByLesson(lessonId as string);
+      const data = await api.getCommentsByLesson(lessonId as string) as Comment[];
       setComments(data);
     } catch (err) {
       console.error("Failed to load comments", err);
     }
   };
-
 
   const handleSelect = (questionId: number, choiceId: number) => {
     setSelectedAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
@@ -92,12 +100,29 @@ export default function LessonDetailPage() {
     }
     setSubmitting(true);
     try {
-      const result = await api.submitQuiz(currentLesson!.id!, selectedAnswers);
+      const result = await api.submitQuiz(currentLesson!.id!, selectedAnswers) as QuizResults;
       const passed = result.correctCount !== undefined;
-      setResultData({ score: result.score, passed, completed: result.courseCompleted ?? false });
+      setResultData({
+        score: result.score,
+        passed,
+        completed: result.courseCompleted ?? false,
+      });
       if (passed) {
         setCurrentLesson((prev) =>
-          prev ? { ...prev, lessonProgress: [{ id: 0, completed: true, score: result.score, lessonId: prev.id, userId: 0 }] } : null
+          prev
+            ? {
+                ...prev,
+                lessonProgress: [
+                  {
+                    id: 0,
+                    completed: true,
+                    score: result.score,
+                    lessonId: prev.id,
+                    userId: 0,
+                  },
+                ],
+              }
+            : null,
         );
         setIsNextLocked(false);
       }
@@ -114,14 +139,31 @@ export default function LessonDetailPage() {
     try {
       await api.submitQuiz(currentLesson!.id!, {});
       setCurrentLesson((prev) =>
-        prev ? { ...prev, lessonProgress: [{ id: 0, completed: true, score: 100, lessonId: prev.id, userId: 0 }] } : null
+        prev
+          ? {
+              ...prev,
+              lessonProgress: [
+                {
+                  id: 0,
+                  completed: true,
+                  score: 100,
+                  lessonId: prev.id,
+                  userId: 0,
+                },
+              ],
+            }
+          : null,
       );
       setIsNextLocked(false);
     } catch (err) {
       console.error("Failed to mark lesson as complete", err);
     } finally {
       setSubmitting(false);
-      router.push(nextLessonId ? `/courses/${id}/lesson/${nextLessonId}` : `/courses/${id}`);
+      router.push(
+        nextLessonId
+          ? `/courses/${id}/lesson/${nextLessonId}`
+          : `/courses/${id}`,
+      );
     }
   };
 
@@ -132,9 +174,10 @@ export default function LessonDetailPage() {
     fetchComments();
   };
 
-
   if (loading)
-    return <div className="p-20 text-center animate-pulse">Loading Content...</div>;
+    return (
+      <div className="p-20 text-center animate-pulse">Loading Content...</div>
+    );
   if (!currentLesson)
     return <div className="p-20 text-center">Lesson not found.</div>;
 
@@ -157,7 +200,8 @@ export default function LessonDetailPage() {
           <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
             <h3 className="text-lg font-bold mb-4">About this lesson</h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-              {currentLesson.description || "No description provided for this lesson."}
+              {currentLesson.description ||
+                "No description provided for this lesson."}
             </p>
           </div>
         </div>

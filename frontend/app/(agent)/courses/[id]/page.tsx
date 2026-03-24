@@ -29,25 +29,50 @@ export default function CourseDetailPage() {
   }, [id]);
 
   if (loading)
-    return <div className="p-20 text-center animate-pulse">Loading Lessons...</div>;
-  if (!course)
-    return <div className="p-20 text-center">Course not found.</div>;
+    return (
+      <div className="p-20 text-center animate-pulse">Loading Lessons...</div>
+    );
+  if (!course) return <div className="p-20 text-center">Course not found.</div>;
 
   return (
     <div className="max-w-5xl mx-auto p-8">
-      <div className="mb-12">
-        <Link
-          href="/"
-          className="mb-1 text-sm font-bold flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors"
+      <div
+        className="relative mb-12 rounded-[2.5rem] overflow-hidden"
+        style={
+          course.thumbnail
+            ? {
+                backgroundImage: `url(${course.thumbnail})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : {}
+        }
+      >
+        {course.thumbnail && (
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" />
+        )}
+        <div
+          className={`relative z-10 p-10 ${course.thumbnail ? "text-white" : ""}`}
         >
-          ← Go back
-        </Link>
-        <br />
-        <span className="text-blue-600 font-bold tracking-widest text-xs uppercase">
-          Course Module
-        </span>
-        <h1 className="text-5xl font-black mt-2 mb-4 dark:text-white">{course.title}</h1>
-        <p className="text-slate-500 text-xl max-w-2xl">{course.description}</p>
+          <Link
+            href="/"
+            className={`mb-1 text-sm font-bold flex items-center gap-2 transition-colors ${course.thumbnail ? "text-white/70 hover:text-white" : "text-slate-500 hover:text-blue-600"}`}
+          >
+            ← Go back
+          </Link>
+          <br />
+          <span
+            className={`font-bold tracking-widest text-xs uppercase ${course.thumbnail ? "text-blue-300" : "text-blue-600"}`}
+          >
+            Course Module
+          </span>
+          <h1 className="text-5xl font-black mt-2 mb-4">{course.title}</h1>
+          <p
+            className={`text-xl max-w-2xl ${course.thumbnail ? "text-white/80" : "text-slate-500"}`}
+          >
+            {course.description}
+          </p>
+        </div>
       </div>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">

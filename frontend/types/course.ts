@@ -126,7 +126,9 @@ export interface EnrolledCourses {
 }
 
 export interface QuizResults {
-  lesson: string;
-  score: string;
-  status: string;
+  correctCount?: number;
+  score: number;
+  totalQuestions: number;
+  courseCompleted: boolean;
+  message?: string;
 }
