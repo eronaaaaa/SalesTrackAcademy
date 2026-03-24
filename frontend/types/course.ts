@@ -60,10 +60,17 @@ export interface GlobalDashboard {
     totalAgents: number;
     totalCourses: number;
     totalAssignments: number;
-    averageQuizScore: string;
+    averageQuizScore: number;
+    completionRate: number;
   }
 }
 
+export interface ProgressData {
+  userId: number;
+  lessonId: number;
+  courseId: number;
+  score: number;
+}
 export interface Comment {
   id: number;
   text: string;

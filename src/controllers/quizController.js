@@ -34,7 +34,7 @@ exports.createQuestion = async (req, res) => {
 exports.submitQuiz = async (req, res) => {
   try {
     const { lessonId } = req.params;
-    const { answers } = req.body;
+    const { answers } = req.body || {}; //default to empty object if no answers
     const userId = req.user.id;
 
     const lesson = await prisma.lesson.findUnique({
@@ -49,20 +49,25 @@ exports.submitQuiz = async (req, res) => {
     let correctCount = 0;
     const totalQuestions = lesson.questions.length;
 
-    lesson.questions.forEach((q) => {
-      const submittedChoiceId = answers[q.id];
-      const correctChoice = q.choices.find((c) => c.isCorrect);
+    let passed = false;
+    let finalScore = 0;
 
-      if (submittedChoiceId == correctChoice.id) {
-        correctCount++;
-      }
-    });
+    if (totalQuestions === 0) {
+      passed = true;
+      finalScore = 100;
+    } else {
+      lesson.questions.forEach((q) => {
+        const submittedChoiceId = answers[q.id];
+        const correctChoice = q.choices.find((c) => c.isCorrect);
 
-    const finalScore =
-      totalQuestions > 0
-        ? Math.round((correctCount / totalQuestions) * 100)
-        : 0;
-    const passed = finalScore >= lesson.passingScore;
+        if (submittedChoiceId == correctChoice?.id) {
+          correctCount++;
+        }
+      });
+
+      finalScore = Math.round((correctCount / totalQuestions) * 100);
+      passed = finalScore >= (lesson.passingScore || 0);
+    }
 
     if (passed) {
       await prisma.lessonProgress.upsert({
@@ -72,11 +77,13 @@ exports.submitQuiz = async (req, res) => {
             lessonId: parseInt(lessonId),
           },
         },
-        update: { completed: true },
+        update: { completed: true, score: finalScore },
         create: {
           userId: userId,
           lessonId: parseInt(lessonId),
-          // completed: true,
+          courseId: lesson.courseId,
+          score: finalScore,
+          completed: true,
         },
       });
 

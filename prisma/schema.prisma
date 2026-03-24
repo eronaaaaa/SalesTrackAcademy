@@ -106,7 +106,8 @@ model Choice {
 model LessonProgress {
   id        Int      @id @default(autoincrement())
   completed Boolean  @default(false)
-  score     Int?     
+  score     Int?    
+  courseId  Int?
   
   // Relations
   userId    Int

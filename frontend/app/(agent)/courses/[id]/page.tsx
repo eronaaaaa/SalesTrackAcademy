@@ -24,7 +24,6 @@ export default function CourseDetailPage() {
     fetchDetails();
   }, [id]);
 
-  // const { percentage, completedCount, totalCount } = course?.progress;
 
   if (loading)
     return (

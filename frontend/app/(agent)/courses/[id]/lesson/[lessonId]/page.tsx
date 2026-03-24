@@ -2,14 +2,15 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/services/CourseService";
-import { Comment, Course, Lesson, Question } from "@/types/course";
+import { Comment, Lesson, Question } from "@/types/course";
 import Link from "next/link";
 import QuestionCard from "@/components/QuestionCard";
-import router from "next/router";
+import { useRouter } from "next/navigation";
 import QuizResultModal from "@/components/QuizResultsModal";
 import CommentSection from "@/components/CommentSection";
 
 export default function LessonDetailPage() {
+  const router = useRouter();
   const { id, lessonId } = useParams();
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [nextLessonId, setNextLessonId] = useState<number | null>(null);
@@ -21,6 +22,8 @@ export default function LessonDetailPage() {
   const [showResult, setShowResult] = useState(false);
   const [resultData, setResultData] = useState({ score: 0, completed: false });
   const [comments, setComments] = useState<Comment[]>([]);
+  const [isNextLocked, setIsNextLocked] = useState(true);
+  const [prevLessonId, setPrevLessonId] = useState<number | null>(null);
 
   const [commentText, setCommentText] = useState("");
 
@@ -56,24 +59,59 @@ export default function LessonDetailPage() {
     setSubmitting(true);
     try {
       const result = await api.submitQuiz(currentLesson!.id!, selectedAnswers);
+      setCurrentLesson((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          lessonProgress: [{ completed: true, score: result.score }],
+        };
+      });
       setResultData({
         score: result.score,
         completed: result.courseCompleted,
       });
+      setIsNextLocked(false);
       setShowResult(true);
-      // window.location.reload();
     } catch (err) {
       console.error(err);
     } finally {
       setSubmitting(false);
     }
   };
-  const handleNextFromModal = () => {
-    setShowResult(false);
-    if (nextLessonId) {
-      router.push(`/courses/${id}/lesson/${nextLessonId}`);
-    } else {
-      router.push(`/courses/${id}`);
+  const handleCompleteWithoutQuiz = async () => {
+    setSubmitting(true);
+    try {
+      await api.submitQuiz(currentLesson!.id!, {});
+      setCurrentLesson((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          lessonProgress: [
+            {
+              id: 0,
+              completed: true,
+              score: 100,
+              lessonId: prev.id,
+              userId: 0,
+            },
+          ],
+        };
+      });
+      setIsNextLocked(false);
+      if (nextLessonId) {
+        router.push(`/courses/${id}/lesson/${nextLessonId}`);
+      } else {
+        router.push(`/courses/${id}`);
+      }
+    } catch (err) {
+      console.error("Failed to mark lesson as complete", err);
+      if (nextLessonId) {
+        router.push(`/courses/${id}/lesson/${nextLessonId}`);
+      } else {
+        router.push(`/courses/${id}`);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
   useEffect(() => {
@@ -83,14 +121,31 @@ export default function LessonDetailPage() {
         const data = await api.getCourseById(id as string);
 
         const lessons = data?.lessons || [];
-        const index = lessons.findIndex(
+        const currentIndex = lessons.findIndex(
           (l: Lesson) => l.id === parseInt(lessonId as string),
         );
+        if (currentIndex !== -1) {
+          const lessonData = lessons[currentIndex];
+          setCurrentLesson(lessonData);
+          const currentPassedInDB =
+            lessonData.lessonProgress?.[0]?.completed || false;
+          const hasNoQuiz =
+            !lessonData.questions || lessonData.questions.length === 0;
 
-        if (index !== -1) {
-          setCurrentLesson(lessons[index]);
-          if (index < lessons.length - 1) {
-            setNextLessonId(lessons[index + 1].id);
+          if (currentIndex > 0) {
+            setPrevLessonId(lessons[currentIndex - 1].id);
+          } else {
+            setPrevLessonId(null);
+          }
+
+          if (currentIndex < lessons.length - 1) {
+            setNextLessonId(lessons[currentIndex + 1].id);
+
+            if (currentPassedInDB || hasNoQuiz) {
+              setIsNextLocked(false);
+            } else {
+              setIsNextLocked(true);
+            }
           } else {
             setNextLessonId(null);
           }
@@ -174,91 +229,6 @@ export default function LessonDetailPage() {
   if (!currentLesson)
     return <div className="p-20 text-center">Lesson not found.</div>;
 
-  // return (
-  //   <div className="max-w-4xl mx-auto p-6 pb-20">
-  //     <Link
-  //       href={`/courses/${id}`}
-  //       className="mb-8 text-sm font-bold inline-flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors"
-  //     >
-  //       ← Back to Curriculum
-  //     </Link>
-
-  //     <header className="mb-10">
-  //       <h1 className="text-4xl font-black mb-4 dark:text-white">
-  //         {currentLesson.title}
-  //       </h1>
-  //       <div className="h-1 w-20 bg-blue-600 rounded-full"></div>
-  //     </header>
-
-  //     {/* <div className="aspect-video bg-slate-900 rounded-3xl mb-10 flex items-center justify-center border border-slate-800 shadow-2xl">
-  //       <span className="text-slate-500 font-mono italic">
-  //         Video Player Placeholder
-  //       </span>
-  //     </div> */}
-
-  //     <div className="mb-10 shadow-2xl overflow-hidden rounded-3xl">
-  //       {renderContent()}
-  //     </div>
-
-  //     <div className="prose dark:prose-invert max-w-none mb-12">
-  //       <p className="text-lg text-slate-600 dark:text-slate-400">
-  //         {currentLesson?.description ||
-  //           "In this lesson, we dive deep into the core concepts of Sales Mastery."}
-  //       </p>
-  //     </div>
-
-  //     <CommentSection
-  //       commentText={commentText}
-  //       onCommentTextChange={setCommentText}
-  //       handlePostComment={handlePostComment}
-  //       comments={comments}
-  //     />
-
-  //     {currentLesson?.questions?.length > 0 && (
-  //       <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-3xl shadow-sm mb-10">
-  //         <h2 className="text-2xl font-bold mb-6">Test Your Knowledge</h2>
-  //         {currentLesson.questions.map((q: Question) => (
-  //           <QuestionCard
-  //             key={q.id}
-  //             question={q}
-  //             selectedChoiceId={selectedAnswers[q.id] || null}
-  //             onSelect={(choiceId) => handleSelect(q.id, choiceId)}
-  //           />
-  //         ))}{" "}
-  //         <button
-  //           onClick={handleSubmitQuiz}
-  //           disabled={submitting}
-  //           className="w-full mt-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black hover:opacity-90 transition-all disabled:opacity-50"
-  //         >
-  //           {submitting ? "Checking Answers..." : "Submit Quiz Responses"}
-  //         </button>
-  //       </section>
-  //     )}
-
-  //     <footer className="pt-10 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-  //       {nextLessonId ? (
-  //         <Link href={`/courses/${id}/lesson/${nextLessonId}`}>
-  //           <button className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-95">
-  //             Next Lesson <span className="text-xl">→</span>
-  //           </button>
-  //         </Link>
-  //       ) : (
-  //         <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-6 py-3 rounded-2xl font-bold flex items-center gap-2">
-  //           Course Completed
-  //         </div>
-  //       )}
-  //     </footer>
-  //     {showResult && (
-  //       <QuizResultModal
-  //         score={resultData.score}
-  //         passed={resultData.completed}
-  //         onClose={() => setShowResult(false)}
-  //         onNext={handleNextFromModal}
-  //       />
-  //     )}
-  //   </div>
-  // );
-
   return (
     <div className="max-w-[1600px] mx-auto p-6 pb-20">
       <header className="mb-8 flex justify-between items-end">
@@ -269,9 +239,16 @@ export default function LessonDetailPage() {
           >
             ← Back to Curriculum
           </Link>
-          <div className="bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest">
-            Lesson {currentLesson.order}
-          </div>
+          <Link href={`/courses/${id}/lesson/${prevLessonId}`}>
+            <button
+              disabled={!prevLessonId}
+              className={`${
+                prevLessonId ? "bg-blue-500" : "bg-slate-400"
+              } px-4 py-2 rounded-full text-white text-[10px] font-black uppercase tracking-widest transition-all`}
+            >
+              <span className="text-xs">←</span> Previous lesson
+            </button>
+          </Link>
         </div>
         <h1 className="text-3xl font-black dark:text-white">
           {currentLesson.title}
@@ -279,8 +256,13 @@ export default function LessonDetailPage() {
 
         {nextLessonId ? (
           <Link href={`/courses/${id}/lesson/${nextLessonId}`}>
-            <button className="bg-blue-500 dark:bg-slate-800 px-4 py-2 rounded-full text-white text-[10px] font-black uppercase tracking-widest">
-              Lesson {currentLesson.order + 1} <span className="text-l">→</span>
+            <button
+              disabled={isNextLocked}
+              className={`${
+                isNextLocked ? "bg-slate-400" : "bg-blue-500"
+              } px-4 py-2 rounded-full text-white text-[10px] font-black uppercase tracking-widest transition-all`}
+            >
+              Next Lesson <span className="text-l">→</span>
             </button>
           </Link>
         ) : (
@@ -308,7 +290,7 @@ export default function LessonDetailPage() {
         </div>
 
         <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-6">
-          {currentLesson?.questions?.length > 0 && (
+          {currentLesson?.questions?.length > 0 ? (
             <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-[2.5rem] shadow-sm">
               <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <span className="p-2 bg-amber-100 text-amber-600 rounded-lg text-xs">
@@ -328,10 +310,65 @@ export default function LessonDetailPage() {
               </div>
               <button
                 onClick={handleSubmitQuiz}
-                disabled={submitting}
-                className="w-full mt-6 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-sm hover:opacity-90 transition-all"
+                disabled={
+                  submitting ||
+                  currentLesson?.lessonProgress?.[0]?.completed ||
+                  resultData.completed
+                }
+                className={`w-full mt-6 py-4 rounded-2xl font-black text-sm transition-all ${
+                  resultData.completed
+                    ? "bg-green-100 text-green-700 border border-green-200 cursor-default"
+                    : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90"
+                }`}
               >
-                {submitting ? "Checking..." : "Submit Answers"}
+                {submitting ? (
+                  "Checking..."
+                ) : resultData?.completed ? (
+                  <span className="flex items-center justify-center gap-2 animate-in fade-in zoom-in duration-300">
+                    ✅ Lesson Mastered (Score:{" "}
+                    {resultData?.score ??
+                      currentLesson?.lessonProgress?.[0]?.score}
+                    %)
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2 animate-in fade-in zoom-in duration-300">
+                    Submit Answers
+                  </span>
+                )}
+              </button>
+            </section>
+          ) : (
+            <section className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-8 rounded-[2.5rem] text-center">
+              <div className="w-16 h-16 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg shadow-blue-500/30">
+                ✓
+              </div>
+              <h2 className="text-xl font-bold mb-2 dark:text-white">
+                {nextLessonId ? "Lesson Complete!" : "Course Complete!"}
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                {nextLessonId
+                  ? "There is no quiz for this lesson. You can head straight to the next section."
+                  : "You've reached the end of the course! Click below to finalize your progress."}
+              </p>
+
+              <button
+                onClick={handleCompleteWithoutQuiz}
+                disabled={submitting}
+                className={`w-full py-4 rounded-2xl font-bold transition-all disabled:opacity-50 ${
+                  nextLessonId
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-green-600 text-white hover:bg-green-700"
+                }`}
+              >
+                {submitting ? (
+                  "Saving Progress..."
+                ) : nextLessonId ? (
+                  <span className="flex items-center justify-center gap-2">
+                    Continue to Next Lesson <span className="text-lg">→</span>
+                  </span>
+                ) : (
+                  "Finish Course & Exit"
+                )}
               </button>
             </section>
           )}
@@ -346,6 +383,15 @@ export default function LessonDetailPage() {
           </div>
         </div>
       </div>
+      {showResult && (
+        <QuizResultModal
+          score={resultData.score}
+          passed={resultData.completed}
+          onClose={() => setShowResult(false)}
+          courseId={id as string}
+          nextLessonId={nextLessonId}
+        />
+      )}
     </div>
   );
 }

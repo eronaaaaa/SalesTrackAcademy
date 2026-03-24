@@ -6,69 +6,76 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+// exports.getGlobalStats = async (req, res) => {
+//   try {
+//     const totalAgents = await prisma.user.count({ where: { role: "AGENT" } });
+//     const totalCourses = await prisma.course.count();
+//     const totalAssignments = await prisma.assignment.count();
+
+//     const completedAssignments = await prisma.assignment.count({
+//       where: { status: "GRADUATED" }
+//     });
+
+//     const completionRate = totalAssignments > 0
+//       ? Math.round((completedAssignments / totalAssignments) * 100)
+//       : 0;
+
+//     const avgScore = await prisma.lessonProgress.aggregate({
+//       _avg: { score: true },
+//     });
+
+//     res.json({
+//       platformOverview: {
+//         totalAgents,
+//         totalCourses,
+//         totalAssignments,
+//         averageQuizScore: Math.round(avgScore._avg.score || 0) + "%",
+//         completionRate: `${completionRate}%`,
+//       },
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
 exports.getGlobalStats = async (req, res) => {
   try {
-    const totalAgents = await prisma.user.count({ where: { role: "AGENT" } });
-    const totalCourses = await prisma.course.count();
-    const totalAssignments = await prisma.assignment.count();
+    const [
+      totalAgents,
+      totalCourses,
+      totalAssignments,
+      completedAssignments,
+      avgScore,
+    ] = await Promise.all([
+      prisma.user.count({ where: { role: "AGENT" } }),
+      prisma.course.count(),
+      prisma.assignment.count(),
+      prisma.assignment.count({ where: { status: "COMPLETED" } }),
+      prisma.lessonProgress.aggregate({
+        _avg: { score: true },
+        where: { score: { not: null } },
+      }),
+    ]);
 
-    const avgScore = await prisma.lessonProgress.aggregate({
-      _avg: { score: true },
-    });
+    const completionRate =
+      totalAssignments > 0
+        ? Math.round((completedAssignments / totalAssignments) * 100)
+        : 0;
 
     res.json({
       platformOverview: {
         totalAgents,
         totalCourses,
         totalAssignments,
-        averageQuizScore: Math.round(avgScore._avg.score || 0) + "%",
+        averageQuizScore: Math.round(avgScore._avg.score || 0),
+        completionRate: completionRate,
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Stats Error:", error);
+    res.status(500).json({ error: "Failed to fetch dashboard stats" });
   }
 };
-
-// exports.getAgentProgressReport = async (req, res) => {
-//   try {
-//     const reports = await prisma.user.findMany({
-//       where: { role: "AGENT" },
-//       select: {
-//         id: true,
-//         email: true,
-//         assignments: {
-//           include: {
-//             course: {
-//               select: {
-//                 title: true,
-//                 _count: { select: { lessons: true } },
-//               },
-//             },
-//           },
-//         },
-//         lessonProgress: {
-//           include: {
-//             lesson: { select: { title: true } },
-//           },
-//         },
-//       },
-//     });
-
-//     const formattedReport = reports.map((agent) => ({
-//       agentEmail: agent.email,
-//       coursesEnrolled: agent.assignments.length,
-//       quizResults: agent.lessonProgress.map((lp) => ({
-//         lesson: lp.lesson.title,
-//         score: lp.score + "%",
-//         status: lp.completed ? "PASSED" : "FAILED",
-//       })),
-//     }));
-
-//     res.json(formattedReport);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
 
 exports.getAgentProgressReport = async (req, res) => {
   try {

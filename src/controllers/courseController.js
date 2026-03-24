@@ -129,11 +129,16 @@ exports.checkCourseCompletion = async (userId, courseId) => {
     });
 
     if (totalLessons > 0 && totalLessons === completedLessons) {
-      await prisma.assignment.update({
+      await prisma.assignment.upsert({
         where: {
           userId_courseId: { userId, courseId: parseInt(courseId) },
         },
-        data: { status: "COMPLETED" },
+        update: { status: "COMPLETED" },
+        create: {
+          userId,
+          courseId: parseInt(courseId),
+          status: "COMPLETED",
+        },
       });
       console.log(`User ${userId} has graduated from Course ${courseId}!`);
       return true;

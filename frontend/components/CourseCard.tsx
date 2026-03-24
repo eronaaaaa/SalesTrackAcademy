@@ -13,7 +13,7 @@ export default function CourseCard({ course }: { course: Course }) {
       </div>
       <p className="text-sm opacity-70 mb-6">{course.description}</p>
       
-      <button className="w-full py-3 bg-brand-accent text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
+      <button className="py-3 bg-brand-accent text-blue-500 rounded-xl font-semibold hover:opacity-90 transition-opacity">
         {course.status === 'COMPLETED' ? 'Review Course' : 'Continue Learning'}
       </button>
     </div>

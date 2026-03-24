@@ -6,6 +6,7 @@ const {
   getAssignedCoursesAdmin,
   getMyAssignments,
   inviteAgentByEmail,
+  bulkAssignCourses,
 } = require("../controllers/assignmentController");
 const {
   getGlobalStats,
@@ -20,6 +21,8 @@ router.get(
   authorize("ADMIN"),
   getAgentProgressReport,
 );
+
+router.post("/bulk-assign", protect, authorize("ADMIN"), bulkAssignCourses);
 
 router.post("/assign", protect, authorize("ADMIN"), assignCourse);
 router.get("/dashboard", protect, authorize("ADMIN"), getAssignedCoursesAdmin);

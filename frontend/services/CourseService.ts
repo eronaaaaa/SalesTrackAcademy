@@ -4,6 +4,7 @@ import {
   Comment,
   Course,
   GlobalDashboard,
+  ProgressData,
 } from "@/types/course";
 
 const API_BASE_URL =
@@ -55,6 +56,24 @@ export const api = {
     );
 
     if (!res.ok) throw new Error("Failed to post comment");
+    return res.json();
+  },
+
+  bulkAssign: async (emails: string[], courseId: string) => {
+    const res = await fetch(`${API_BASE_URL}/assignments/bulk-assign`, {
+      method: "POST",
+      headers: api.getHeaders(),
+      body: JSON.stringify({
+        emails,
+        courseId,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || "Failed to perform bulk assignment");
+    }
+
     return res.json();
   },
 
@@ -170,7 +189,7 @@ export const api = {
     });
 
     const data = await res.json();
-    
+
     if (!res.ok) {
       throw new Error(data.error || data.message || "Failed to invite agent");
     }
