@@ -6,49 +6,19 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-// exports.getGlobalStats = async (req, res) => {
-//   try {
-//     const totalAgents = await prisma.user.count({ where: { role: "AGENT" } });
-//     const totalCourses = await prisma.course.count();
-//     const totalAssignments = await prisma.assignment.count();
-
-//     const completedAssignments = await prisma.assignment.count({
-//       where: { status: "GRADUATED" }
-//     });
-
-//     const completionRate = totalAssignments > 0
-//       ? Math.round((completedAssignments / totalAssignments) * 100)
-//       : 0;
-
-//     const avgScore = await prisma.lessonProgress.aggregate({
-//       _avg: { score: true },
-//     });
-
-//     res.json({
-//       platformOverview: {
-//         totalAgents,
-//         totalCourses,
-//         totalAssignments,
-//         averageQuizScore: Math.round(avgScore._avg.score || 0) + "%",
-//         completionRate: `${completionRate}%`,
-//       },
-//     });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
-
 exports.getGlobalStats = async (req, res) => {
   try {
     const [
       totalAgents,
       totalCourses,
+      totalComments,
       totalAssignments,
       completedAssignments,
       avgScore,
     ] = await Promise.all([
       prisma.user.count({ where: { role: "AGENT" } }),
       prisma.course.count(),
+      prisma.comment.count(),
       prisma.assignment.count(),
       prisma.assignment.count({ where: { status: "COMPLETED" } }),
       prisma.lessonProgress.aggregate({
@@ -66,13 +36,14 @@ exports.getGlobalStats = async (req, res) => {
       platformOverview: {
         totalAgents,
         totalCourses,
+        totalComments,
         totalAssignments,
         averageQuizScore: Math.round(avgScore._avg.score || 0),
-        completionRate: completionRate,
+        completionRate,
       },
     });
   } catch (error) {
-    console.error("Stats Error:", error);
+    console.error("Stats error:", error);
     res.status(500).json({ error: "Failed to fetch dashboard stats" });
   }
 };
@@ -85,56 +56,53 @@ exports.getAgentProgressReport = async (req, res) => {
         assignments: {
           include: {
             course: {
-              include: {
-                _count: { select: { lessons: true } },
-              },
+              include: { _count: { select: { lessons: true } } },
             },
           },
         },
         lessonProgress: {
           where: { completed: true },
-          include: {
-            lesson: { select: { title: true, courseId: true } },
-          },
+          include: { lesson: { select: { title: true, courseId: true } } },
         },
       },
     });
 
-    const detailedReport = agents.map((agent) => {
-      const courseProgress = agent.assignments.map((assign) => {
-        const totalLessons = assign.course._count.lessons;
-
-        const completedCount = agent.lessonProgress.filter(
-          (lp) => lp.completed && lp.lesson.courseId === assign.course.id,
+    const report = agents.map((agent) => {
+      const enrolledCourses = agent.assignments.map((assign) => {
+        const total = assign.course._count.lessons;
+        const completed = agent.lessonProgress.filter(
+          (lp) => lp.lesson.courseId === assign.course.id,
         ).length;
-
         const percentage =
-          totalLessons > 0
-            ? Math.round((completedCount / totalLessons) * 100)
-            : 0;
+          total > 0 ? Math.round((completed / total) * 100) : 0;
 
         return {
+          courseId: assign.course.id,
           courseTitle: assign.course.title,
           completionRate: `${percentage}%`,
-          lessonsFinished: `${completedCount}/${totalLessons}`,
+          lessonsFinished: `${completed}/${total}`,
           status: percentage === 100 ? "GRADUATED" : "IN_TRAINING",
         };
       });
 
       return {
+        userId: agent.id,
         agentEmail: agent.email,
-        enrolledCourses: courseProgress,
+        enrolledCourses,
         coursesEnrolled: agent.assignments.length,
         quizResults: agent.lessonProgress.map((lp) => ({
           lesson: lp.lesson.title,
-          score: lp.score + "%",
+          score: `${lp.score}%`,
           status: lp.completed ? "PASSED" : "FAILED",
         })),
       };
     });
 
-    res.json(detailedReport);
+    res.json(report);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Report error:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to fetch agent report", details: error.message });
   }
 };

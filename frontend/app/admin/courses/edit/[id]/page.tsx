@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { api } from "@/services/CourseService";
+import { api } from "@/services/ApiService";
 import { Course, Lesson } from "@/types/course";
 import QuizBuilder from "@/components/admin/QuizBuilder";
 import CourseInfoForm from "@/components/admin/CourseInfoForm";
@@ -16,7 +16,9 @@ export default function EditCoursePage() {
   const [loading, setLoading] = useState(true);
   const [showLessonModal, setShowLessonModal] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
-  const [activeQuizLessonId, setActiveQuizLessonId] = useState<number | null>(null);
+  const [activeQuizLessonId, setActiveQuizLessonId] = useState<number | null>(
+    null,
+  );
 
   const fetchCourse = async () => {
     try {
@@ -33,7 +35,11 @@ export default function EditCoursePage() {
     fetchCourse();
   }, [id]);
 
-  const handleUpdateCourse = async (title: string, description: string, thumbnail: string) => {
+  const handleUpdateCourse = async (
+    title: string,
+    description: string,
+    thumbnail: string,
+  ) => {
     setLoading(true);
     try {
       await api.updateCourse(course!.id, title, description, thumbnail);
@@ -47,6 +53,7 @@ export default function EditCoursePage() {
 
   const handleSaveLesson = async (lessonForm: {
     title: string;
+    description: string;
     contentUrl: string;
     contentType: string;
     passingScore: number;
@@ -57,6 +64,7 @@ export default function EditCoursePage() {
         await api.updateLesson(
           editingLesson.id,
           lessonForm.title,
+          lessonForm.description,
           lessonForm.contentUrl,
           lessonForm.contentType,
           lessonForm.order,
@@ -66,6 +74,7 @@ export default function EditCoursePage() {
         await api.addLesson(
           course!.id,
           lessonForm.title,
+          lessonForm.description,
           lessonForm.contentUrl,
           lessonForm.contentType,
           lessonForm.order,
@@ -80,6 +89,16 @@ export default function EditCoursePage() {
     }
   };
 
+  const handleDeleteLesson = async (lessonId: number) => {
+    if (!confirm("Are you sure you want to delete this lesson?")) return;
+    try {
+      await api.deleteLesson(lessonId);
+      fetchCourse();
+    } catch {
+      alert("Failed to delete lesson");
+    }
+  };
+
   const handleOpenAddLesson = () => {
     setEditingLesson(null);
     setShowLessonModal(true);
@@ -91,13 +110,19 @@ export default function EditCoursePage() {
   };
 
   if (loading)
-    return <div className="p-20 text-center animate-pulse text-slate-500">Loading Workspace...</div>;
+    return (
+      <div className="p-20 text-center animate-pulse text-slate-500">
+        Loading Workspace...
+      </div>
+    );
 
   return (
     <main className="max-w-7xl mx-auto p-8">
       <header className="flex justify-between items-center mb-12">
         <div>
-          <h1 className="text-4xl font-black dark:text-white">Course Builder</h1>
+          <h1 className="text-4xl font-black dark:text-white">
+            Course Builder
+          </h1>
           <p className="text-slate-500 font-medium">{course?.title}</p>
         </div>
         <button
@@ -123,6 +148,7 @@ export default function EditCoursePage() {
             onAddLesson={handleOpenAddLesson}
             onEditLesson={handleOpenEditLesson}
             onOpenQuiz={setActiveQuizLessonId}
+            onDeleteLesson={handleDeleteLesson}
           />
         </div>
       </div>
@@ -145,7 +171,10 @@ export default function EditCoursePage() {
             <QuizBuilder
               lessonId={activeQuizLessonId}
               onClose={() => setActiveQuizLessonId(null)}
-              questions={course?.lessons?.find((l) => l.id === activeQuizLessonId)?.questions || []}
+              questions={
+                course?.lessons?.find((l) => l.id === activeQuizLessonId)
+                  ?.questions || []
+              }
               onSaveSuccess={fetchCourse}
             />
           </div>

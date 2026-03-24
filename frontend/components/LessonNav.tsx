@@ -1,4 +1,7 @@
+"use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { api } from "@/services/ApiService";
 
 interface LessonNavProps {
   courseId: string;
@@ -15,6 +18,18 @@ export default function LessonNav({
   nextLessonId,
   isNextLocked,
 }: LessonNavProps) {
+  const router = useRouter();
+
+  const handleNextLesson = async () => {
+    if (!nextLessonId || isNextLocked) return;
+    try {
+      await api.getLessonById(String(nextLessonId));
+      router.push(`/courses/${courseId}/lesson/${nextLessonId}`);
+    } catch {
+      router.push(`/courses/${courseId}?locked=true`);
+    }
+  };
+
   return (
     <header className="mb-8 flex justify-between items-end">
       <div className="flex flex-col">
@@ -39,16 +54,15 @@ export default function LessonNav({
       <h1 className="text-3xl font-black dark:text-white">{title}</h1>
 
       {nextLessonId ? (
-        <Link href={`/courses/${courseId}/lesson/${nextLessonId}`}>
-          <button
-            disabled={isNextLocked}
-            className={`${
-              isNextLocked ? "bg-slate-400" : "bg-blue-500"
-            } px-4 py-2 rounded-full text-white text-[10px] font-black uppercase tracking-widest transition-all`}
-          >
-            Next Lesson <span className="text-l">→</span>
-          </button>
-        </Link>
+        <button
+          onClick={handleNextLesson}
+          disabled={isNextLocked}
+          className={`${
+            isNextLocked ? "bg-slate-400" : "bg-blue-500"
+          } px-4 py-2 rounded-full text-white text-[10px] font-black uppercase tracking-widest transition-all`}
+        >
+          Next Lesson <span className="text-l">→</span>
+        </button>
       ) : (
         <div className="bg-green-500 dark:bg-slate-800 px-4 py-2 rounded-full text-white text-[10px] font-black uppercase tracking-widest">
           Course Completed

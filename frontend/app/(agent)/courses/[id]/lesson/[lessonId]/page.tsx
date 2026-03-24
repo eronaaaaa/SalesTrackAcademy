@@ -2,8 +2,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { api } from "@/services/CourseService";
+import { api } from "@/services/ApiService";
 import { Comment, Lesson } from "@/types/course";
+import Link from "next/link";
 import QuizResultModal from "@/components/QuizResultsModal";
 import CommentSection from "@/components/CommentSection";
 import LessonContent from "@/components/LessonContent";
@@ -21,10 +22,12 @@ export default function LessonDetailPage() {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [showResult, setShowResult] = useState(false);
-  const [resultData, setResultData] = useState({ score: 0, completed: false });
+  const [resultData, setResultData] = useState({ score: 0, passed: false, completed: false });
   const [comments, setComments] = useState<Comment[]>([]);
   const [isNextLocked, setIsNextLocked] = useState(true);
   const [commentText, setCommentText] = useState("");
+
+  // ---- Data fetching ----
 
   useEffect(() => {
     const loadData = async () => {
@@ -38,8 +41,14 @@ export default function LessonDetailPage() {
 
         if (currentIndex === -1) return;
 
-        const lessonData = lessons[currentIndex];
-        setCurrentLesson(lessonData);
+        let lessonData;
+        try {
+          lessonData = await api.getLessonById(lessonId as string);
+          setCurrentLesson(lessonData);
+        } catch (err: any) {
+          router.push(`/courses/${id}?locked=true`);
+          return;
+        }
 
         const alreadyPassed = lessonData.lessonProgress?.[0]?.completed || false;
         const hasNoQuiz = !lessonData.questions || lessonData.questions.length === 0;
@@ -71,6 +80,7 @@ export default function LessonDetailPage() {
     }
   };
 
+
   const handleSelect = (questionId: number, choiceId: number) => {
     setSelectedAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
   };
@@ -83,11 +93,14 @@ export default function LessonDetailPage() {
     setSubmitting(true);
     try {
       const result = await api.submitQuiz(currentLesson!.id!, selectedAnswers);
-      setCurrentLesson((prev) =>
-        prev ? { ...prev, lessonProgress: [{ id: 0, completed: true, score: result.score, lessonId: prev.id, userId: 0 }] } : null
-      );
-      setResultData({ score: result.score, completed: result.courseCompleted });
-      setIsNextLocked(false);
+      const passed = result.correctCount !== undefined;
+      setResultData({ score: result.score, passed, completed: result.courseCompleted ?? false });
+      if (passed) {
+        setCurrentLesson((prev) =>
+          prev ? { ...prev, lessonProgress: [{ id: 0, completed: true, score: result.score, lessonId: prev.id, userId: 0 }] } : null
+        );
+        setIsNextLocked(false);
+      }
       setShowResult(true);
     } catch (err) {
       console.error(err);
@@ -118,6 +131,7 @@ export default function LessonDetailPage() {
     setCommentText("");
     fetchComments();
   };
+
 
   if (loading)
     return <div className="p-20 text-center animate-pulse">Loading Content...</div>;
@@ -167,14 +181,14 @@ export default function LessonDetailPage() {
               handlePostComment={handlePostComment}
               comments={comments}
             />
-          </div>  
+          </div>
         </div>
       </div>
 
       {showResult && (
         <QuizResultModal
           score={resultData.score}
-          passed={resultData.completed}
+          passed={resultData.passed}
           onClose={() => setShowResult(false)}
           courseId={id as string}
           nextLessonId={nextLessonId}

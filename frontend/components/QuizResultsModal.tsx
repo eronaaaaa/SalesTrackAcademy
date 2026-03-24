@@ -57,7 +57,7 @@ export default function QuizResultModal({
                 onClick={handleContinue}
                 className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
               >
-                {nextLessonId
+                {passed && nextLessonId
                   ? "Continue to Next Lesson"
                   : "Finish Course & Exit"}
               </button>

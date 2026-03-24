@@ -3,9 +3,14 @@ import { Course } from "@/types/course";
 interface AdminCourseCardProps {
   course: Course;
   onEdit: () => void;
+  onDelete: () => void;
 }
 
-export default function AdminCourseCard({ course, onEdit }: AdminCourseCardProps) {
+export default function AdminCourseCard({
+  course,
+  onEdit,
+  onDelete,
+}: AdminCourseCardProps) {
   return (
     <div className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] flex items-center justify-between hover:border-blue-500/50 transition-all shadow-sm">
       <div className="flex items-center gap-6">
@@ -30,7 +35,10 @@ export default function AdminCourseCard({ course, onEdit }: AdminCourseCardProps
         >
           Edit Content
         </button>
-        <button className="p-2.5 text-slate-300 hover:text-red-500 transition-colors">
+        <button
+          className="p-2.5 text-slate-300 hover:text-red-500 transition-colors"
+          onClick={onDelete}
+        >
           🗑️
         </button>
       </div>

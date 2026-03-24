@@ -32,6 +32,11 @@ export default function CourseProgressCard({ progress }: CourseProgressCardProps
         />
       </div>
 
+      {progress.percentage === 0 && progress.totalCount > 0 && (
+        <div className="mt-4 flex items-center gap-2 text-slate-400 text-sm font-bold">
+          <span>🚀 Ready to start your journey?</span>
+        </div>
+      )}
       {progress.percentage === 100 && (
         <div className="mt-4 flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-bold">
           <span>✨ Course Mastered</span>

@@ -52,6 +52,7 @@ model Lesson {
   contentUrl   String           @default("")
   contentType  ContentType      @default(VIDEO)
   order     Int 
+  description String?
   
   // Relations
   courseId  Int

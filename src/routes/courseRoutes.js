@@ -5,34 +5,16 @@ const {
   getAllCourses,
   getCourseById,
   editCourse,
+  deleteCourse,
 } = require("../controllers/courseController");
-
-const { isLessonUnlocked } = require("../middleware/lessonLock");
-
-const {
-  addLesson,
-  getLessonContent,
-  editLesson,
-} = require("../controllers/lessonController");
-
+const { addLesson } = require("../controllers/lessonController");
 const { protect, authorize } = require("../middleware/authMiddleware");
-const {
-  addComment,
-  getLessonComments,
-} = require("../controllers/commentController");
-router.post("/:courseId/lessons", protect, authorize("ADMIN"), addLesson);
-
-router.put("/lesson/:lessonId", protect, editLesson);
-router.get("/lesson/:lessonId", protect, isLessonUnlocked, getLessonContent);
-
-router.put("/:courseId", protect, editCourse);
 
 router.get("/", protect, getAllCourses);
-
-router.get("/:id", protect, getCourseById);
-
 router.post("/", protect, authorize("ADMIN"), createCourse);
+router.get("/:id", protect, getCourseById);
+router.put("/:id", protect, authorize("ADMIN"), editCourse);
+router.delete("/:id", protect, authorize("ADMIN"), deleteCourse);
+router.post("/:courseId/lessons", protect, authorize("ADMIN"), addLesson);
 
-router.post("/lesson/:lessonId/comments", protect, addComment);
-router.get("/lesson/:lessonId/comments", protect, getLessonComments);
 module.exports = router;

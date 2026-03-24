@@ -4,6 +4,7 @@ interface Stats {
   totalAssignments: number;
   averageScore: number;
   completionRate: number;
+  totalComments: number;
 }
 
 export default function StatsGrid({ stats }: { stats: Stats }) {
@@ -11,6 +12,17 @@ export default function StatsGrid({ stats }: { stats: Stats }) {
     typeof stats.averageScore === "string"
       ? parseInt(stats.averageScore)
       : stats.averageScore;
+
+  const hasData = stats.totalAgents > 0 || stats.totalCourses > 0;
+
+  if (!hasData) {
+    return (
+      <div className="p-8 flex flex-col items-center justify-center py-12 bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-700 rounded-[2.5rem]">
+        <div className="text-4xl mb-3">📊</div>
+        <p className="text-slate-400 font-bold text-sm">No stats yet — invite agents and create courses to see data here.</p>
+      </div>
+    );
+  }
 
   return (
     <section className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-8">
@@ -32,6 +44,11 @@ export default function StatsGrid({ stats }: { stats: Stats }) {
       <div className="bg-white dark:bg-slate-900 p-4 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
         <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Total Assignments</span>
         <p className="text-4xl font-black mt-2 dark:text-white">{stats.totalAssignments}</p>
+      </div>
+
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Total Comments</span>
+        <p className="text-4xl font-black mt-2 dark:text-white">{stats.totalComments}</p>
       </div>
 
       <div className="bg-white dark:bg-slate-900 p-4 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">

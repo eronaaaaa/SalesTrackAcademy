@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { api } from "@/services/CourseService";
+import { api } from "@/services/ApiService";
 import { Course } from "@/types/course";
 
 export default function InviteAgentModal({

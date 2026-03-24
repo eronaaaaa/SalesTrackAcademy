@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/services/CourseService";
+import { api } from "@/services/ApiService";
 import { Course } from "@/types/course";
 import CreateCourseModal from "@/components/admin/CreateCourseModal";
 import AdminCourseCard from "@/components/admin/AdminCourseCard";
@@ -19,12 +19,26 @@ export default function AdminCourseListPage() {
     fetchCourses();
   }, []);
 
+  const handleDeleteCourse = async (courseId: number) => {
+    if (!confirm("Are you sure you want to delete this course?")) return;
+    try {
+      await api.deleteCourse(courseId);
+      setCourses((prev) => prev.filter((c) => c.id !== courseId));
+    } catch (err) {
+      console.error("Failed to delete course", err);
+    }
+  };
+
   return (
     <main className="p-8 max-w-6xl mx-auto">
       <header className="flex justify-between items-center mb-10">
         <div>
-          <h1 className="text-4xl font-black dark:text-white">Course Library</h1>
-          <p className="text-slate-500">Manage your training modules and curriculum.</p>
+          <h1 className="text-4xl font-black dark:text-white">
+            Course Library
+          </h1>
+          <p className="text-slate-500">
+            Manage your training modules and curriculum.
+          </p>
           <button
             onClick={() => router.push("/admin/")}
             className="text-sm font-bold text-slate-400 hover:text-slate-600"
@@ -46,6 +60,7 @@ export default function AdminCourseListPage() {
             key={course.id}
             course={course}
             onEdit={() => router.push(`/admin/courses/edit/${course.id}`)}
+            onDelete={() => handleDeleteCourse(course.id)}
           />
         ))}
 

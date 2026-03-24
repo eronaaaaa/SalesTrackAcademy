@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/services/CourseService";
+import { api } from "@/services/ApiService";
 
 interface CreateCourseModalProps {
   onClose: () => void;

@@ -8,7 +8,8 @@ const prisma = new PrismaClient({ adapter });
 
 exports.addLesson = async (req, res) => {
   try {
-    const { title, contentUrl, contentType, order } = req.body;
+    const { title, contentUrl, contentType, order, passingScore, description } =
+      req.body;
     const { courseId } = req.params;
 
     const lesson = await prisma.lesson.create({
@@ -16,7 +17,9 @@ exports.addLesson = async (req, res) => {
         title,
         contentUrl,
         contentType: contentType || "VIDEO",
+        description,
         order: parseInt(order),
+        passingScore: passingScore ? parseInt(passingScore) : undefined,
         courseId: parseInt(courseId),
       },
     });
@@ -33,9 +36,10 @@ exports.addLesson = async (req, res) => {
 exports.editLesson = async (req, res) => {
   try {
     const { lessonId } = req.params;
-    const { title, contentUrl, contentType, order, passingScore } = req.body;
+    const { title, contentUrl, contentType, order, passingScore, description } =
+      req.body;
 
-    const updatedLesson = await prisma.lesson.update({
+    const lesson = await prisma.lesson.update({
       where: { id: parseInt(lessonId) },
       data: {
         title: title || undefined,
@@ -44,23 +48,39 @@ exports.editLesson = async (req, res) => {
         order: order !== undefined ? parseInt(order) : undefined,
         passingScore:
           passingScore !== undefined ? parseInt(passingScore) : undefined,
+        description: description || undefined,
       },
     });
 
-    res
-      .status(200)
-      .json({ message: "Lesson updated successfully", lesson: updatedLesson });
+    res.status(200).json({ message: "Lesson updated successfully", lesson });
   } catch (error) {
-    console.error(error);
-    if (error.code === "P2025") {
+    if (error.code === "P2025")
       return res.status(404).json({ error: "Lesson not found" });
-    }
     res
       .status(500)
       .json({ error: "Failed to update lesson", details: error.message });
   }
 };
 
+exports.deleteLesson = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+    const id = parseInt(lessonId);
+
+    await prisma.lessonProgress.deleteMany({ where: { lessonId: id } });
+    await prisma.comment.deleteMany({ where: { lessonId: id } });
+    await prisma.question.deleteMany({ where: { lessonId: id } });
+    await prisma.lesson.delete({ where: { id } });
+
+    res.status(200).json({ message: "Lesson deleted successfully" });
+  } catch (error) {
+    if (error.code === "P2025")
+      return res.status(404).json({ error: "Lesson not found" });
+    res
+      .status(500)
+      .json({ error: "Failed to delete lesson", details: error.message });
+  }
+};
 exports.getLessonContent = async (req, res) => {
   try {
     const { lessonId } = req.params;
@@ -69,18 +89,13 @@ exports.getLessonContent = async (req, res) => {
       where: { id: parseInt(lessonId) },
       include: {
         questions: {
-          include: {
-            choices: {
-              select: { id: true, text: true },
-            },
-          },
+          include: { choices: { select: { id: true, text: true } } },
         },
+        lessonProgress: { where: { userId: req.user.id } },
       },
     });
 
-    if (!lesson) {
-      return res.status(404).json({ error: "Lesson not found" });
-    }
+    if (!lesson) return res.status(404).json({ error: "Lesson not found" });
 
     res.status(200).json(lesson);
   } catch (error) {

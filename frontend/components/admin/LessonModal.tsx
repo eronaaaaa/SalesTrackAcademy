@@ -3,6 +3,7 @@ import { ContentType, Lesson } from "@/types/course";
 
 interface LessonForm {
   title: string;
+  description: string;
   contentUrl: string;
   contentType: string;
   passingScore: number;
@@ -24,6 +25,7 @@ export default function LessonModal({
 }: LessonModalProps) {
   const [form, setForm] = useState<LessonForm>({
     title: editingLesson?.title ?? "",
+    description: editingLesson?.description ?? "",
     contentUrl: editingLesson?.contentUrl ?? "",
     contentType: editingLesson?.contentType ?? "VIDEO",
     passingScore: editingLesson?.passingScore ?? 70,
@@ -49,6 +51,14 @@ export default function LessonModal({
             onChange={(e) => update("title", e.target.value)}
           />
 
+          <textarea
+            className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none dark:text-white resize-none"
+            placeholder="Description (optional)"
+            rows={3}
+            value={form.description}
+            onChange={(e) => update("description", e.target.value)}
+          />
+
           <select
             className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none dark:text-white"
             value={form.contentType}
@@ -61,7 +71,7 @@ export default function LessonModal({
 
           <input
             className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none dark:text-white"
-            placeholder="URL"
+            placeholder="Content URL"
             value={form.contentUrl}
             onChange={(e) => update("contentUrl", e.target.value)}
           />

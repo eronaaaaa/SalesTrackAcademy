@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api } from "@/services/CourseService";
+import { api } from "@/services/ApiService";
 import { Choice, Question } from "@/types/course";
 
 interface QuizBuilderProps {

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { api } from "@/services/CourseService";
+import { useParams, useSearchParams } from "next/navigation";
+import { api } from "@/services/ApiService";
 import { Course } from "@/types/course";
 import Link from "next/link";
 import CourseProgressCard from "@/components/CourseProgressCard";
@@ -10,6 +10,8 @@ import LessonList from "@/components/LessonList";
 export default function CourseDetailPage() {
   const { id } = useParams();
   const [course, setCourse] = useState<Course | null>(null);
+  const searchParams = useSearchParams();
+  const isLocked = searchParams.get("locked") === "true";
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,6 +51,11 @@ export default function CourseDetailPage() {
       </div>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        {isLocked && (
+          <div className="lg:col-span-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-6 py-4 rounded-2xl text-red-600 dark:text-red-400 font-bold text-sm">
+            🔒 That lesson is locked. Complete the previous lesson first.
+          </div>
+        )}
         <CourseProgressCard progress={course.progress} />
       </section>
 

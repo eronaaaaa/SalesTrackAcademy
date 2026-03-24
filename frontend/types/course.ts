@@ -5,7 +5,6 @@ export type ContentType = 'VIDEO' | 'AUDIO' | 'PDF';
 export enum Role {
   agent = "AGENT",
   admin = "ADMIN"
-
 }
 
 export interface Question {
@@ -30,7 +29,6 @@ export interface Lesson {
   courseId: number;
   order: number;
   passingScore: number;
-  // videoUrl: string;
   contentUrl: string;
   contentType: ContentType;
   description: string;
@@ -62,6 +60,7 @@ export interface GlobalDashboard {
     totalAssignments: number;
     averageQuizScore: number;
     completionRate: number;
+    totalComments: number;
   }
 }
 
@@ -114,6 +113,8 @@ export interface AgentsReport {
   enrolledCourses: EnrolledCourses[];
   coursesEnrolled: number;
   quizResults: QuizResults[];
+  userId: number;
+
 }
 
 export interface EnrolledCourses {
@@ -121,6 +122,7 @@ export interface EnrolledCourses {
   completionRate: string;
   lessonsFinished: string;
   status: string;
+  courseId: number;
 }
 
 export interface QuizResults {

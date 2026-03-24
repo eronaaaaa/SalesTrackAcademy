@@ -6,7 +6,7 @@ interface LessonSidebarProps {
   nextLessonId: number | null;
   submitting: boolean;
   selectedAnswers: Record<string, number>;
-  resultData: { score: number; completed: boolean };
+  resultData: { score: number; passed: boolean; completed: boolean };
   onSelect: (questionId: number, choiceId: number) => void;
   onSubmitQuiz: () => void;
   onCompleteWithoutQuiz: () => void;
@@ -22,7 +22,7 @@ export default function LessonSidebar({
   onSubmitQuiz,
   onCompleteWithoutQuiz,
 }: LessonSidebarProps) {
-  const isCompleted = lesson.lessonProgress?.[0]?.completed || resultData.completed;
+  const isCompleted = lesson.lessonProgress?.[0]?.completed || resultData.passed;
 
   if (lesson.questions?.length > 0) {
     return (
@@ -56,7 +56,7 @@ export default function LessonSidebar({
             "Checking..."
           ) : isCompleted ? (
             <span className="flex items-center justify-center gap-2 animate-in fade-in zoom-in duration-300">
-              ✅ Lesson Mastered (Score: {resultData.score ?? lesson.lessonProgress?.[0]?.score}%)
+              ✅ Lesson Mastered (Score: {lesson.lessonProgress?.[0]?.score}%)
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2 animate-in fade-in zoom-in duration-300">

@@ -10,7 +10,17 @@ export default function LessonList({ courseId, lessons }: LessonListProps) {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold mb-6">Course Curriculum</h2>
-      {lessons?.map((lesson, index) => (
+
+      {lessons?.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-slate-50 dark:bg-slate-900/50 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
+          <div className="text-5xl mb-4">📭</div>
+          <h3 className="text-lg font-black dark:text-white mb-1">No Lessons Yet</h3>
+          <p className="text-slate-400 text-sm font-medium">
+            This course has no lessons yet. Check back soon!
+          </p>
+        </div>
+      ) : (
+        lessons?.map((lesson, index) => (
         <div
           key={lesson.id}
           className="flex items-center justify-between p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-blue-500 transition-colors group cursor-pointer"
@@ -43,7 +53,8 @@ export default function LessonList({ courseId, lessons }: LessonListProps) {
             )}
           </div>
         </div>
-      ))}
+              ))
+      )}
     </div>
   );
 }
